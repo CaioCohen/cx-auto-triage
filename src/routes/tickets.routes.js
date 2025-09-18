@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getTickets, runTriage } from '../controllers/tickets.controller.js';
+import { createTicketController, getTickets, runTriage, triageOne } from '../controllers/tickets.controller.js';
 
 const router = Router();
 
@@ -8,5 +8,9 @@ router.get('/tickets', getTickets);
 
 // POST /api/triage/run?limit=25
 router.post('/triage/run', runTriage);
+
+router.post('/tickets/:id/triage', triageOne);
+
+router.post('/tickets', createTicketController);
 
 export default router;
