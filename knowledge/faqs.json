@@ -1,0 +1,22 @@
+[
+  {
+    "id": "faq_retention",
+    "q": "Why do charts not show more than 30 days of data",
+    "a": "Charts obey each metric's retention_days. Data older than retention_days will not be shown. This is intended behavior."
+  },
+  {
+    "id": "faq_widget_hidden",
+    "q": "Widget missing from a dashboard",
+    "a": "Widgets can be hidden or archived. Toggle visibility in the dashboard editor or check with an editor on your team."
+  },
+  {
+    "id": "faq_access_private",
+    "q": "Cannot see a private project",
+    "a": "Private projects require a permission row with at least viewer. Ask a project admin to grant you access."
+  },
+  {
+    "id": "faq_no_recent_data",
+    "q": "Widget shows empty chart",
+    "a": "If filters are narrow or the metric has no recent samples in the last 1 to 2 days, the chart may appear empty. Verify filters and ingestion."
+  }
+]

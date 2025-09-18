@@ -108,7 +108,6 @@ export async function triageOne(req, res) {
 
     // step 3: finalize
     const triaged = await finalizeTriage({ ticket, checks: [], db: dbText });
-
     // update in Zendesk (same compact comment as above)
     const mergedTags = Array.from(new Set([...(ticket.tags || []), 'ai_triaged', `cat_${triaged.category}`, ...triaged.tags]));
     await updateTicket(ticket.id, {

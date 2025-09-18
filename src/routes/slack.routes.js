@@ -1,0 +1,45 @@
+import { Router } from 'express';
+import { askAnswer } from '../controllers/answers.controller.js';
+
+const router = Router();
+
+// Slack sends application/x-www-form-urlencoded with fields like text, user_id, channel_id.
+// You already have app.use(express.json()), also add urlencoded in app.js:
+// app.use(express.urlencoded({ extended: true }));
+
+router.post('/command', async (req, res) => {
+  try {
+    // Basic shape: /ask_observe <query text>
+    const query = String(req.body?.text || '').trim();
+    if (!query) {
+      return res.json({ response_type: 'ephemeral', text: 'Usage: /ask_observe <your question>' });
+    }
+
+    // Quick call without DB by default; you can add heuristics to include DB
+    const fakeReq = { body: { query, includeDb: false } };
+    const fakeRes = {
+      json: (data) => data
+    };
+    const result = await askAnswer(fakeReq, fakeRes); // reuse controller
+    // askAnswer would normally write res.json; we can call answer service directly instead:
+    // const answer = await answerQuestion({ query });
+
+    // If askAnswer returned undefined because it wrote directly, call service:
+    let payload;
+    if (!result) {
+      // fallback path
+      payload = { answer: 'No answer generated.' };
+    } else {
+      payload = result;
+    }
+
+    return res.json({
+      response_type: 'ephemeral',
+      text: payload.answer
+    });
+  } catch (e) {
+    return res.json({ response_type: 'ephemeral', text: 'Error answering your question.' });
+  }
+});
+
+export default router;
