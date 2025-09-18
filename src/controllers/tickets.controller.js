@@ -1,8 +1,7 @@
 import { z } from 'zod';
 import { listTickets, getTicketById, updateTicket, createTicket } from '../repositories/zendesk.repository.js';
 import { planTriage, finalizeTriage } from '../services/triage.service.js';
-import { runAutoChecks } from '../repositories/mockdb.repository.js';
-
+import { loadDbText } from '../repositories/mockdb.repository.js';
 
 // GET /api/tickets
 export async function getTickets(req, res) {
@@ -104,47 +103,41 @@ export async function triageOne(req, res) {
     // step 1: plan
     const plan = await planTriage({ ticket });
 
-    let checksPayload = { context: {}, checks: [] };
-    if (plan.need_db === 'yes') {
-      const planCtx = {
-        email: plan.email,
-        org_id: plan.org_id,
-        project_name: plan.project_name,
-        dashboard_name: plan.dashboard_name,
-        widget_title: plan.widget_title,
-        metric_id: plan.metric_id
-      };
-      checksPayload = await runAutoChecks(ticket, planCtx);
-    }
-    // step 3: finalize with or without checks
-    const triaged = await finalizeTriage({ ticket, checks: checksPayload.checks });
+    // step 2: if needed, load DB and pass it in
+    const dbText = plan.need_db === 'yes' ? await loadDbText() : null;
 
-    // update in Zendesk
+    // step 3: finalize
+    const triaged = await finalizeTriage({ ticket, checks: [], db: dbText });
+
+    // update in Zendesk (same compact comment as above)
     const mergedTags = Array.from(new Set([...(ticket.tags || []), 'ai_triaged', `cat_${triaged.category}`, ...triaged.tags]));
     await updateTicket(ticket.id, {
       tags: mergedTags,
       priority: triaged.priority,
       comment: {
-        public: false, body:
+        public: false,
+        body:
           `AI triage summary:
           Category: ${triaged.category}
           Priority: ${triaged.priority}
-          Root cause: ${triaged.root_cause}
-          Need DB: ${plan.need_db}
-          Planner notes: ${plan.notes || '(none)'}
-          Evidence checks: ${checksPayload.checks.length ? 'present' : 'none'}
+          Language: ${triaged.language}
+          Confidence: ${Math.round(triaged.confidence * 100)}%
+          Used DB: ${plan.need_db === 'yes' ? 'yes' : 'no'}
+          Tags: ${(triaged.tags || []).join(', ')}
 
-          Inferred context:
-          ${JSON.stringify(checksPayload.context, null, 2)}
-
-          Summary: ${triaged.summary || '(none)'}
-
-          Actions:
-          ${(triaged.actions || []).map(a => `- ${a}`).join('\n')}
-          ` }
+          Summary:
+          ${triaged.summary}
+        `
+      }
     });
 
-    return res.json({ id: ticket.id, status: 'updated', need_db: plan.need_db, category: triaged.category, priority: triaged.priority });
+    return res.json({
+      id: ticket.id,
+      status: 'updated',
+      need_db: plan.need_db,
+      category: triaged.category,
+      priority: triaged.priority
+    });
   } catch (e) {
     return res.status(500).json({ error: e?.message || 'single triage failed' });
   }

@@ -139,48 +139,63 @@ const TriageResultSchema = z.object({
   tags: z.array(z.string()).max(10),
   summary: z.string().min(10).max(750),
   confidence: z.number().min(0).max(1),
-  root_cause: z.string().optional(),      
+  root_cause: z.string().optional(),
   actions: z.array(z.string()).optional(),
   comment_private: z.string().optional()
 });
 
-export async function finalizeTriage({ ticket, checks = [] }) {
+export async function finalizeTriage({ ticket, checks = [], db = null }) {
   const knowledge = await loadKnowledge();
 
+  // keep your schemaString as you already have it
   const schemaString = `
-{
-  "category": "billing" | "bug" | "how_to" | "account" | "feature_request" | "other",
-  "priority": "low" | "normal" | "high" | "urgent",
-  "language": string (2-8 characters),
-  "tags": string[] (max 10),
-  "summary": string (10 to 750 characters),
-  "confidence": number from 0 to 1,
-  "root_cause: string",
-  "actions": string[],
-  "comment_private": string
-}
-`.trim();
+    {
+      "category": "billing" | "bug" | "how_to" | "account" | "feature_request" | "other",
+      "priority": "low" | "normal" | "high" | "urgent",
+      "language": string (2-8 characters),
+      "tags": string[] (max 10),
+      "summary": string (10 to 750 characters),
+      "confidence": number from 0 to 1
+    }
+    `.trim();
+
+  // be careful not to blow up context if DB grows; cap the payload
+  let dbChunk = null;
+  if (db) {
+    const asText = typeof db === 'string' ? db : JSON.stringify(db);
+    // cap to ~100KB to be safe; adjust if you want
+    dbChunk = asText.length > 100_000 ? asText.slice(0, 100_000) + '...<truncated>' : asText;
+  }
 
   const basePrompt = [
     {
       role: 'system',
-      content: `You are a senior CX triage assistant. Use evidence from checks when present.
+      content: `You are a senior CX triage assistant. Use the product description and, if provided, the DB JSON as ground truth.
         Reply ONLY with a valid JSON object that exactly matches this schema:
 
         ${schemaString}
 
         All fields are required. Do NOT include markdown, comments, or explanations.`
-            },
-            { role: 'system', content: `Knowledge:\n${knowledge}` },
-            {
-              role: 'user',
-              content:
-                `Ticket:\nSubject: ${ticket.subject || '(no subject)'}\nBody:\n${ticket.description || '(no description)'}\n\n` +
-                `Checks JSON:\n${JSON.stringify({ checks }, null, 2)}`
-            }
-          ];
+    },
+    { role: 'system', content: `Product description:\n${knowledge}` },
+    {
+      role: 'user',
+      content:
+        `Ticket:\nSubject: ${ticket.subject || '(no subject)'}\nBody:\n${ticket.description || '(no description)'}\n\n` +
+        `Checks JSON (may be empty):\n${JSON.stringify({ checks }, null, 2)}`
+    }
+  ];
 
-  // step 1 — first call
+  if (dbChunk) {
+    basePrompt.push({
+      role: 'user',
+      content:
+        `DB JSON (use only as evidence; if something is missing here, do not invent it):\n` +
+        dbChunk
+    });
+  }
+
+  // first call
   const first = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     response_format: { type: 'json_object' },
@@ -192,30 +207,29 @@ export async function finalizeTriage({ ticket, checks = [] }) {
 
   try {
     return TriageResultSchema.parse(JSON.parse(content));
-  } catch (e) {
-    // step 2 — retry by telling the model what went wrong
+  } catch {
+    // repair pass
     const repairPrompt = [
       {
         role: 'system',
-        content: `You previously returned a triage result but missed required fields. Retry now and reply ONLY with a valid JSON object that matches this schema:
+        content: `You returned a triage result but missed required fields. Retry now and reply ONLY with a valid JSON object that matches this schema:
 
           ${schemaString}
 
           All fields are required. Do NOT omit any key. Do NOT return markdown or explanations.`
-      },
-      { role: 'user', content: `Your last JSON:\n${content}` }
-    ];
+                },
+                { role: 'user', content: `Your last JSON:\n${content}` }
+              ];
 
-    const retry = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      response_format: { type: 'json_object' },
-      temperature: 0.1,
-      messages: repairPrompt
-    });
+              const retry = await openai.chat.completions.create({
+                model: 'gpt-4o-mini',
+                response_format: { type: 'json_object' },
+                temperature: 0.1,
+                messages: repairPrompt
+              });
 
-    const fixedContent = retry.choices?.[0]?.message?.content || '{}';
-
-    return TriageResultSchema.parse(JSON.parse(fixedContent));
+    const fixed = retry.choices?.[0]?.message?.content || '{}';
+    return TriageResultSchema.parse(JSON.parse(fixed));
   }
 }
 

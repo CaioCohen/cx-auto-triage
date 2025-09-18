@@ -1,0 +1,33 @@
+[
+{
+  "requester": { "name": "Taylor", "email": "taylor@acme.com" },
+  "subject": "\"Error Rate %\" shows no data on \"Ops Overview\" (Checkout project)",
+  "comment": {
+    "body": "Since last week the \"Error Rate %\" widget on the \"Ops Overview\" dashboard shows an empty chart. Filters are env=prod. The widget reads from metric m_error_rate. Is the metric receiving recent samples?",
+    "public": true
+  },
+  "priority": "normal",
+  "tags": ["dashboard", "no_data", "checkout", "ops_overview", "error_rate", "prod"]
+},
+{
+  "requester": { "name": "Elliot", "email": "elliot@acme.com" },
+  "subject": "Cannot access Checkout project",
+  "comment": {
+    "body": "I used to see the Checkout project and the \"Ops Overview\" dashboard, but they do not show up anymore. Email: elliot@acme.com",
+    "public": true
+  },
+  "priority": "normal",
+  "tags": ["access", "permissions", "private_project", "checkout"]
+},
+{
+  "requester": { "name": "Taylor", "email": "taylor@acme.com" },
+  "subject": "Dashboard missing under project Checkout",
+  "comment": {
+    "body": "I am trying to open the \"Ops Overview\" dashboard under project Checkout but cannot find it. Email: taylor@acme.com, dashboard: Ops Overview, project: Checkout",
+    "public": true
+  },
+  "priority": "low",
+  "tags": ["project", "wrong_name", "dashboard", "ops_overview"]
+}
+
+]
