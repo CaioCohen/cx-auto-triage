@@ -26,7 +26,7 @@ export async function runTriage(req, res) {
     const limit = Number(req.query.limit ?? 25);
 
     // fetch new tickets that are not yet triaged
-    const allNew = await listTickets({ limit, status: 'new' });
+    const allNew = await listTickets({ limit, status: 'open' });
     const candidates = allNew.filter(t => !(t.tags || []).includes('ai_triaged'));
 
     const results = [];
