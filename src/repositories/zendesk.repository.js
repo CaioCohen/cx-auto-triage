@@ -58,6 +58,7 @@ export async function listTickets({ limit = 50, status = 'new' } = {}) {
 export async function getTicketById(id) {
   try {
     const res = await client().get(`/tickets/${id}.json`);
+    console.log(res);
     return res.data?.ticket || null;
   } catch (e) {
     throw wrapAxiosError(e, 'Failed to fetch ticket');

@@ -1,0 +1,329 @@
+Galileo Observe - Project Knowledge for Triage AI
+1. What this product is
+
+Galileo Observe is a SaaS for metrics, logs, traces, dashboards, alerting, and LLM evals. Customers organize work by org and project, create dashboards made of widgets, set alerts on metrics, and run eval suites for their bots. This document teaches the Triage AI how the system works and when to check the mock database during triage.
+
+2. Core entities
+
+Org: top level account. Plan and feature access live here.
+
+User: belongs to an org. Has a role and active flag.
+
+Project: logical workspace inside an org. Visibility can be private or public.
+
+Permission: binds a user to a project with scopes.
+
+Dashboard: inside a project. Holds widgets.
+
+Widget: a visual for a metric or table. Has filters and visibility flags.
+
+Metric: time series with retention policy and status.
+
+Metric samples: per day counts used to decide data freshness.
+
+Alert: threshold rule on a metric. Opens incidents.
+
+Incident: lifecycle for an alert event.
+
+Eval suite: collection of eval tests for an LLM app.
+
+Eval run: execution instance of a suite.
+
+Feature flag: controls product capabilities by org.
+
+Audit log: records user actions.
+
+3. Permissions model
+
+Roles: admin, member, viewer.
+
+Scopes per project: examples viewer, dashboard:write, alert:write.
+
+Access rules:
+
+A user must be active=true.
+
+For private projects, user must have a permission row with at least viewer.
+
+For public projects, any org user can view.
+
+Common cause of 403 style issues: active=false user or missing permission row.
+
+4. Feature flags
+
+Flags can be globally on or off, and can be allowed per org.
+
+Example: widgets.grid_v2. If disabled for the org, some widgets will not render or appear.
+
+5. Dashboards and widgets behavior
+
+A widget can be hidden via visible=false or archived via archived=true.
+
+Filters are applied before querying metrics. A wrong filter can remove all data and make a widget look empty.
+
+If a widget points to a metric that is status="archived" the widget shows an error.
+
+6. Metrics ingestion and freshness
+
+Each metric has retention_days and status.
+
+If there are no metric_samples for the last 1 to 2 days, consider the data pipeline broken or the filters too narrow.
+
+Data freshness check: count samples for metric_id where date >= today - 1.
+
+7. Alerts and incidents
+
+Alerts target a single metric and have threshold, window, and enabled.
+
+If enabled=false it will not fire.
+
+Incident opens when threshold is breached over the window and closes when metric returns under threshold for the cool down period.
+
+8. Evals pipeline
+
+eval_suites.status must be active.
+
+eval_runs.status can be queued, running, passed, failed.
+
+If a run sits in queued for more than 15 minutes, flag as backlog or worker outage.
+
+9. Mock database overview
+
+These tables exist in data/mock_db.json:
+
+orgs(id, name, plan, active)
+users(id, org_id, email, name, role, active)
+projects(id, org_id, name, visibility, active)
+permissions(user_id, project_id, scopes[])
+feature_flags(key, enabled, enabled_for_orgs[])
+dashboards(id, project_id, name, owner_user_id, active)
+widgets(id, dashboard_id, type, metric_id, title, filters{...}, visible, archived)
+metrics(id, project_id, name, retention_days, status)
+metric_samples(metric_id, date, count)
+alerts(id, project_id, name, metric_id, threshold, window, enabled, last_fired_at)
+incidents(id, alert_id, status, opened_at, resolved_at)
+eval_suites(id, project_id, name, status)
+eval_runs(id, suite_id, status, created_at)
+audit_logs(id, org_id, actor_user_id, action, target_id, at)
+
+10. Triage categories and priorities
+
+Categories: bug, how_to, account, data_issue, alerting, evals, access.
+
+Priority:
+
+urgent: outage, Sev1, many users, or security.
+
+high: broken production widget or alert failure.
+
+normal: single user issue or clear workaround.
+
+low: documentation or simple how to.
+
+11. When to consult the DB
+
+The first AI step produces required_checks. If any check is present, call the repository before finalizing.
+
+Typical mapping:
+
+Widget missing or empty
+
+widget_exists(title or id)
+
+widget_is_visible(id)
+
+metric_is_active(metric_id)
+
+metric_has_recent_data(metric_id, days=1)
+
+feature_flag_enabled(org_id, "widgets.grid_v2")
+
+User cannot see project or dashboard
+
+user_is_active(email)
+
+user_has_project_scope(email, project_name, "viewer")
+
+Alert never fired
+
+alert_enabled(name)
+
+metric_has_recent_data(metric_id, days=1)
+
+threshold_plausible(metric_id, threshold) (simple heuristic)
+
+Eval run stuck
+
+suite_active(suite_id)
+
+run_status(run_id)
+
+12. Repository check functions
+
+Implement read-only helpers over the JSON file:
+
+user_is_active(email) -> true|false
+user_has_project_scope(email, project_name, scope) -> true|false
+feature_flag_enabled(org_id, key) -> true|false
+project_by_name(org_id, name) -> project or null
+dashboard_by_name(project_id, name) -> dashboard or null
+widget_by_title(dashboard_id, title) -> widget or null
+widget_is_visible(widget) -> true if widget.visible and not widget.archived
+metric_by_id(metric_id) -> metric or null
+metric_has_recent_data(metric_id, days) -> true|false
+alert_by_name(project_id, name) -> alert or null
+suite_active(suite_id) -> true|false
+run_status(run_id) -> string
+
+
+Return null or false, never throw. The controller decides what to do.
+
+13. First AI call: plan the triage
+
+Input: ticket subject, description, requester email, optional org and project names, 1 to 2 short snippets from this file.
+
+Output JSON (triage_plan)
+
+{
+  "category": "bug",
+  "priority": "high",
+  "required_checks": [
+    {"name":"user_is_active","args":{"email":"jane@acme.com"}},
+    {"name":"user_has_project_scope","args":{"email":"jane@acme.com","project":"Checkout","scope":"viewer"}},
+    {"name":"widget_exists","args":{"dashboard":"Ops Overview","title":"Latency P95"}},
+    {"name":"widget_is_visible","args":{"dashboard":"Ops Overview","title":"Latency P95"}},
+    {"name":"metric_has_recent_data","args":{"metric_id":"m_latency","days":1}}
+  ],
+  "notes": "User reports missing widget. Validate visibility and data freshness."
+}
+
+
+If the AI is confident no checks are needed, required_checks can be empty.
+
+14. Second AI call: finalize with evidence
+
+Input: the ticket, the plan above, and the check results as JSON like:
+
+{
+  "checks": [
+    {"name":"user_is_active","ok":true},
+    {"name":"user_has_project_scope","ok":true},
+    {"name":"widget_exists","ok":true, "details":{"id":"w_1"}},
+    {"name":"widget_is_visible","ok":false, "details":{"visible":false,"archived":false}},
+    {"name":"metric_has_recent_data","ok":true}
+  ]
+}
+
+
+Output JSON (triage_result)
+
+{
+  "category": "bug",
+  "priority": "high",
+  "root_cause": "Widget was hidden. visible=false",
+  "actions": [
+    "Unhide widget or instruct user: Dashboard > Edit > Toggle Visible",
+    "Add internal note linking to audit log if recent change exists"
+  ],
+  "tags": ["ai_triaged","cat_bug","widget_hidden"],
+  "comment_private": "Found widget, but visible=false. Metric has fresh data. User has access. Unhide to resolve."
+}
+
+
+Controllers will post comment_private as a private comment and merge tags.
+
+15. Common troubleshooting playbook
+
+Missing widget
+
+Check widget_is_visible. If false, unhide or unarchive.
+
+If true, check metric_is_active and metric_has_recent_data.
+
+If metric is active but no recent data, advise on filters or ingestion.
+
+No data for yesterday
+
+Verify metric exists and is active.
+
+Check metric_has_recent_data(metric_id, 1).
+
+If false, set category data_issue and ask user for pipeline logs.
+
+Alert never triggered
+
+Check alert_enabled.
+
+Check metric_has_recent_data.
+
+If both true, compare threshold vs recent P95 values. If threshold is too high, suggest lowering.
+
+User cannot see project
+
+user_is_active and user_has_project_scope(email, project, "viewer").
+
+If missing, category access and instruct to grant scope.
+
+Eval run stuck
+
+suite_active and current run_status.
+
+If queued > 15 min, set category evals, priority normal, and escalate to infra.
+
+16. Tagging conventions
+
+Always include ai_triaged.
+
+Category tag: cat_<category>.
+
+Add up to two specific tags like widget_hidden, no_recent_data, flag_disabled, permissions_missing.
+
+17. Output contracts
+
+The Triage AI must return strict JSON for:
+
+triage_plan as defined in section 13.
+
+triage_result as defined in section 14.
+If parsing fails, the request should be retried with a system instruction that enforces response_format: json_object.
+
+18. Safety and privacy
+
+Do not echo PII beyond email addresses required for checks.
+
+Never post model output publicly. Post as private comment.
+
+If confidence is low, set priority="normal" and request more details.
+
+19. Example end to end
+
+Ticket: “Latency P95 widget disappeared from Ops Overview.”
+
+Plan:
+
+category bug, priority high
+
+checks: user_active, user_has_project_scope, widget_exists, widget_is_visible, metric_has_recent_data
+
+Results:
+
+all ok except widget_is_visible returns visible=false
+
+Final triage:
+
+Root cause: hidden widget
+
+Actions: unhide, link to audit log if change was recent
+
+Tags: ai_triaged, cat_bug, widget_hidden
+
+20. Notes for chunking
+
+When grounding the model, pass:
+
+The heading for the relevant area (widgets, permissions, metrics)
+
+The data dictionary from section 9
+
+The playbook step that matches the ticket type
+Keep the prompt context under 2 to 3 short sections to control token use.

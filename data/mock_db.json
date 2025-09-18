@@ -1,0 +1,859 @@
+{
+  "orgs": [
+    {
+      "id": "org_1",
+      "name": "Wonka Labs",
+      "plan": "free",
+      "active": true
+    },
+    {
+      "id": "org_2",
+      "name": "Tyrell Corp",
+      "plan": "free",
+      "active": true
+    }
+  ],
+  "users": [
+    {
+      "id": "usr_1",
+      "org_id": "org_1",
+      "email": "sage1@wonkalabs.com",
+      "name": "Sage",
+      "role": "admin",
+      "active": true
+    },
+    {
+      "id": "usr_2",
+      "org_id": "org_1",
+      "email": "elliot2@wonkalabs.com",
+      "name": "Elliot",
+      "role": "member",
+      "active": false
+    },
+    {
+      "id": "usr_3",
+      "org_id": "org_1",
+      "email": "kendall3@wonkalabs.com",
+      "name": "Kendall",
+      "role": "member",
+      "active": true
+    },
+    {
+      "id": "usr_4",
+      "org_id": "org_2",
+      "email": "remy4@tyrell.com",
+      "name": "Remy",
+      "role": "admin",
+      "active": true
+    },
+    {
+      "id": "usr_5",
+      "org_id": "org_2",
+      "email": "parker5@tyrell.com",
+      "name": "Parker",
+      "role": "member",
+      "active": true
+    },
+    {
+      "id": "usr_6",
+      "org_id": "org_2",
+      "email": "taylor6@tyrell.com",
+      "name": "Taylor",
+      "role": "member",
+      "active": true
+    }
+  ],
+  "projects": [
+    {
+      "id": "prj_1",
+      "org_id": "org_1",
+      "name": "Data Platform",
+      "visibility": "private",
+      "active": true
+    },
+    {
+      "id": "prj_2",
+      "org_id": "org_1",
+      "name": "Auth",
+      "visibility": "public",
+      "active": true
+    },
+    {
+      "id": "prj_3",
+      "org_id": "org_2",
+      "name": "Observability",
+      "visibility": "private",
+      "active": true
+    },
+    {
+      "id": "prj_4",
+      "org_id": "org_2",
+      "name": "Growth",
+      "visibility": "private",
+      "active": true
+    }
+  ],
+  "permissions": [
+    {
+      "user_id": "usr_1",
+      "project_id": "prj_1",
+      "scopes": [
+        "viewer",
+        "dashboard:write",
+        "project:admin"
+      ]
+    },
+    {
+      "user_id": "usr_1",
+      "project_id": "prj_2",
+      "scopes": [
+        "project:admin"
+      ]
+    },
+    {
+      "user_id": "usr_2",
+      "project_id": "prj_1",
+      "scopes": [
+        "project:admin",
+        "viewer",
+        "alert:write"
+      ]
+    },
+    {
+      "user_id": "usr_2",
+      "project_id": "prj_2",
+      "scopes": [
+        "project:admin",
+        "alert:write",
+        "dashboard:write"
+      ]
+    },
+    {
+      "user_id": "usr_3",
+      "project_id": "prj_1",
+      "scopes": [
+        "alert:write",
+        "dashboard:write",
+        "metric:write"
+      ]
+    },
+    {
+      "user_id": "usr_3",
+      "project_id": "prj_2",
+      "scopes": [
+        "alert:write"
+      ]
+    },
+    {
+      "user_id": "usr_4",
+      "project_id": "prj_4",
+      "scopes": [
+        "viewer",
+        "project:admin"
+      ]
+    },
+    {
+      "user_id": "usr_4",
+      "project_id": "prj_3",
+      "scopes": [
+        "project:admin"
+      ]
+    },
+    {
+      "user_id": "usr_5",
+      "project_id": "prj_3",
+      "scopes": [
+        "alert:write",
+        "dashboard:write",
+        "metric:write"
+      ]
+    },
+    {
+      "user_id": "usr_5",
+      "project_id": "prj_4",
+      "scopes": [
+        "dashboard:write",
+        "metric:write"
+      ]
+    },
+    {
+      "user_id": "usr_6",
+      "project_id": "prj_4",
+      "scopes": [
+        "project:admin",
+        "viewer",
+        "alert:write"
+      ]
+    },
+    {
+      "user_id": "usr_6",
+      "project_id": "prj_3",
+      "scopes": [
+        "alert:write"
+      ]
+    }
+  ],
+  "feature_flags": [
+    {
+      "key": "widgets.grid_v2",
+      "enabled_for_orgs": [],
+      "enabled": true
+    },
+    {
+      "key": "dashboards.public_share",
+      "enabled_for_orgs": [
+        "org_2"
+      ],
+      "enabled": true
+    },
+    {
+      "key": "alerts.auto_mute",
+      "enabled_for_orgs": [
+        "org_2"
+      ],
+      "enabled": false
+    }
+  ],
+  "dashboards": [
+    {
+      "id": "db_1",
+      "project_id": "prj_1",
+      "name": "Ops Overview",
+      "owner_user_id": "usr_2",
+      "active": true
+    },
+    {
+      "id": "db_2",
+      "project_id": "prj_2",
+      "name": "Release Readiness",
+      "owner_user_id": "usr_1",
+      "active": true
+    },
+    {
+      "id": "db_3",
+      "project_id": "prj_3",
+      "name": "SRE Board",
+      "owner_user_id": "usr_4",
+      "active": true
+    },
+    {
+      "id": "db_4",
+      "project_id": "prj_4",
+      "name": "Release Readiness",
+      "owner_user_id": "usr_6",
+      "active": true
+    }
+  ],
+  "widgets": [
+    {
+      "id": "w_1",
+      "dashboard_id": "db_1",
+      "type": "stat",
+      "metric_id": "m_2",
+      "title": "Memory usage",
+      "filters": {
+        "env": "prod",
+        "region": [
+          "eu-west"
+        ]
+      },
+      "visible": true,
+      "archived": false
+    },
+    {
+      "id": "w_2",
+      "dashboard_id": "db_1",
+      "type": "stat",
+      "metric_id": "m_1",
+      "title": "Traffic",
+      "filters": {
+        "env": "prod",
+        "region": [
+          "us-east"
+        ]
+      },
+      "visible": true,
+      "archived": false
+    },
+    {
+      "id": "w_3",
+      "dashboard_id": "db_2",
+      "type": "table",
+      "metric_id": "m_3",
+      "title": "Traffic",
+      "filters": {
+        "env": "prod",
+        "region": [
+          "us-east"
+        ]
+      },
+      "visible": true,
+      "archived": false
+    },
+    {
+      "id": "w_4",
+      "dashboard_id": "db_2",
+      "type": "timeseries",
+      "metric_id": "m_3",
+      "title": "DB pool busy",
+      "filters": {
+        "env": "staging",
+        "region": [
+          "us-east"
+        ]
+      },
+      "visible": true,
+      "archived": false
+    },
+    {
+      "id": "w_5",
+      "dashboard_id": "db_3",
+      "type": "stat",
+      "metric_id": "m_5",
+      "title": "DB pool busy",
+      "filters": {
+        "env": "staging",
+        "region": [
+          "us-west"
+        ]
+      },
+      "visible": true,
+      "archived": false
+    },
+    {
+      "id": "w_6",
+      "dashboard_id": "db_3",
+      "type": "stat",
+      "metric_id": "m_6",
+      "title": "Memory usage",
+      "filters": {
+        "env": "dev",
+        "region": [
+          "us-west"
+        ]
+      },
+      "visible": true,
+      "archived": false
+    },
+    {
+      "id": "w_7",
+      "dashboard_id": "db_4",
+      "type": "bar",
+      "metric_id": "m_8",
+      "title": "Memory usage",
+      "filters": {
+        "env": "staging",
+        "region": [
+          "us-east"
+        ]
+      },
+      "visible": true,
+      "archived": false
+    },
+    {
+      "id": "w_8",
+      "dashboard_id": "db_4",
+      "type": "stat",
+      "metric_id": "m_7",
+      "title": "Memory usage",
+      "filters": {
+        "env": "prod",
+        "region": [
+          "us-east"
+        ]
+      },
+      "visible": true,
+      "archived": false
+    }
+  ],
+  "metrics": [
+    {
+      "id": "m_1",
+      "project_id": "prj_1",
+      "name": "requests_per_minute",
+      "retention_days": 14,
+      "status": "active"
+    },
+    {
+      "id": "m_2",
+      "project_id": "prj_1",
+      "name": "http_latency_ms",
+      "retention_days": 30,
+      "status": "active"
+    },
+    {
+      "id": "m_3",
+      "project_id": "prj_2",
+      "name": "error_rate_pct",
+      "retention_days": 60,
+      "status": "active"
+    },
+    {
+      "id": "m_4",
+      "project_id": "prj_2",
+      "name": "http_latency_ms",
+      "retention_days": 30,
+      "status": "active"
+    },
+    {
+      "id": "m_5",
+      "project_id": "prj_3",
+      "name": "requests_per_minute",
+      "retention_days": 14,
+      "status": "active"
+    },
+    {
+      "id": "m_6",
+      "project_id": "prj_3",
+      "name": "cpu_usage_pct",
+      "retention_days": 7,
+      "status": "active"
+    },
+    {
+      "id": "m_7",
+      "project_id": "prj_4",
+      "name": "requests_per_minute",
+      "retention_days": 14,
+      "status": "active"
+    },
+    {
+      "id": "m_8",
+      "project_id": "prj_4",
+      "name": "http_latency_ms",
+      "retention_days": 30,
+      "status": "active"
+    }
+  ],
+  "metric_samples": [
+    {
+      "metric_id": "m_1",
+      "date": "2025-09-14",
+      "count": 42259
+    },
+    {
+      "metric_id": "m_1",
+      "date": "2025-09-15",
+      "count": 188586
+    },
+    {
+      "metric_id": "m_1",
+      "date": "2025-09-16",
+      "count": 175283
+    },
+    {
+      "metric_id": "m_1",
+      "date": "2025-09-17",
+      "count": 62990
+    },
+    {
+      "metric_id": "m_1",
+      "date": "2025-09-18",
+      "count": 131115
+    },
+    {
+      "metric_id": "m_2",
+      "date": "2025-09-14",
+      "count": 79174
+    },
+    {
+      "metric_id": "m_2",
+      "date": "2025-09-15",
+      "count": 182916
+    },
+    {
+      "metric_id": "m_2",
+      "date": "2025-09-16",
+      "count": 91813
+    },
+    {
+      "metric_id": "m_2",
+      "date": "2025-09-17",
+      "count": 53034
+    },
+    {
+      "metric_id": "m_2",
+      "date": "2025-09-18",
+      "count": 49385
+    },
+    {
+      "metric_id": "m_3",
+      "date": "2025-09-14",
+      "count": 112308
+    },
+    {
+      "metric_id": "m_3",
+      "date": "2025-09-15",
+      "count": 52607
+    },
+    {
+      "metric_id": "m_3",
+      "date": "2025-09-16",
+      "count": 116950
+    },
+    {
+      "metric_id": "m_3",
+      "date": "2025-09-17",
+      "count": 179572
+    },
+    {
+      "metric_id": "m_3",
+      "date": "2025-09-18",
+      "count": 79928
+    },
+    {
+      "metric_id": "m_4",
+      "date": "2025-09-14",
+      "count": 43926
+    },
+    {
+      "metric_id": "m_4",
+      "date": "2025-09-15",
+      "count": 199507
+    },
+    {
+      "metric_id": "m_4",
+      "date": "2025-09-16",
+      "count": 101944
+    },
+    {
+      "metric_id": "m_4",
+      "date": "2025-09-17",
+      "count": 18254
+    },
+    {
+      "metric_id": "m_4",
+      "date": "2025-09-18",
+      "count": 9499
+    },
+    {
+      "metric_id": "m_5",
+      "date": "2025-09-14",
+      "count": 22001
+    },
+    {
+      "metric_id": "m_5",
+      "date": "2025-09-15",
+      "count": 125519
+    },
+    {
+      "metric_id": "m_5",
+      "date": "2025-09-16",
+      "count": 158432
+    },
+    {
+      "metric_id": "m_5",
+      "date": "2025-09-17",
+      "count": 84478
+    },
+    {
+      "metric_id": "m_5",
+      "date": "2025-09-18",
+      "count": 12780
+    },
+    {
+      "metric_id": "m_6",
+      "date": "2025-09-14",
+      "count": 76373
+    },
+    {
+      "metric_id": "m_6",
+      "date": "2025-09-15",
+      "count": 199224
+    },
+    {
+      "metric_id": "m_6",
+      "date": "2025-09-16",
+      "count": 105860
+    },
+    {
+      "metric_id": "m_6",
+      "date": "2025-09-17",
+      "count": 194217
+    },
+    {
+      "metric_id": "m_6",
+      "date": "2025-09-18",
+      "count": 172167
+    },
+    {
+      "metric_id": "m_7",
+      "date": "2025-09-14",
+      "count": 2375
+    },
+    {
+      "metric_id": "m_7",
+      "date": "2025-09-15",
+      "count": 144166
+    },
+    {
+      "metric_id": "m_7",
+      "date": "2025-09-16",
+      "count": 136367
+    },
+    {
+      "metric_id": "m_7",
+      "date": "2025-09-17",
+      "count": 107431
+    },
+    {
+      "metric_id": "m_7",
+      "date": "2025-09-18",
+      "count": 53423
+    },
+    {
+      "metric_id": "m_8",
+      "date": "2025-09-14",
+      "count": 128221
+    },
+    {
+      "metric_id": "m_8",
+      "date": "2025-09-15",
+      "count": 22381
+    },
+    {
+      "metric_id": "m_8",
+      "date": "2025-09-16",
+      "count": 86998
+    },
+    {
+      "metric_id": "m_8",
+      "date": "2025-09-17",
+      "count": 90788
+    },
+    {
+      "metric_id": "m_8",
+      "date": "2025-09-18",
+      "count": 190766
+    }
+  ],
+  "alerts": [
+    {
+      "id": "al_1",
+      "project_id": "prj_1",
+      "name": "High CPU",
+      "metric_id": "m_1",
+      "threshold": 117,
+      "window": "5m",
+      "enabled": true,
+      "last_fired_at": "2025-09-17T15:13:54+00:00"
+    },
+    {
+      "id": "al_2",
+      "project_id": "prj_2",
+      "name": "High memory",
+      "metric_id": "m_3",
+      "threshold": 817,
+      "window": "5m",
+      "enabled": false,
+      "last_fired_at": "2025-09-11T08:00:54+00:00"
+    },
+    {
+      "id": "al_3",
+      "project_id": "prj_3",
+      "name": "High memory",
+      "metric_id": "m_6",
+      "threshold": 870,
+      "window": "1m",
+      "enabled": true,
+      "last_fired_at": "2025-09-12T02:16:54+00:00"
+    },
+    {
+      "id": "al_4",
+      "project_id": "prj_4",
+      "name": "High CPU",
+      "metric_id": "m_7",
+      "threshold": 810,
+      "window": "1m",
+      "enabled": true,
+      "last_fired_at": null
+    }
+  ],
+  "incidents": [
+    {
+      "id": "inc_1",
+      "alert_id": "al_1",
+      "status": "open",
+      "opened_at": "2025-09-10T01:51:54+00:00",
+      "resolved_at": null
+    },
+    {
+      "id": "inc_2",
+      "alert_id": "al_2",
+      "status": "open",
+      "opened_at": "2025-09-09T09:48:54+00:00",
+      "resolved_at": null
+    },
+    {
+      "id": "inc_3",
+      "alert_id": "al_3",
+      "status": "resolved",
+      "opened_at": "2025-09-12T15:07:54+00:00",
+      "resolved_at": "2025-09-12T17:32:54+00:00"
+    },
+    {
+      "id": "inc_4",
+      "alert_id": "al_4",
+      "status": "resolved",
+      "opened_at": "2025-09-17T02:19:54+00:00",
+      "resolved_at": "2025-09-17T04:42:54+00:00"
+    }
+  ],
+  "eval_suites": [
+    {
+      "id": "es_1",
+      "project_id": "prj_1",
+      "name": "Bot Regression",
+      "status": "active"
+    },
+    {
+      "id": "es_2",
+      "project_id": "prj_2",
+      "name": "Smoke Suite",
+      "status": "active"
+    },
+    {
+      "id": "es_3",
+      "project_id": "prj_3",
+      "name": "Alert Rules QA",
+      "status": "active"
+    },
+    {
+      "id": "es_4",
+      "project_id": "prj_4",
+      "name": "Alert Rules QA",
+      "status": "active"
+    }
+  ],
+  "eval_runs": [
+    {
+      "id": "er_1",
+      "suite_id": "es_1",
+      "status": "queued",
+      "created_at": "2025-09-17T09:49:54+00:00"
+    },
+    {
+      "id": "er_2",
+      "suite_id": "es_1",
+      "status": "failed",
+      "created_at": "2025-09-15T11:46:54+00:00"
+    },
+    {
+      "id": "er_3",
+      "suite_id": "es_2",
+      "status": "failed",
+      "created_at": "2025-09-16T09:04:54+00:00"
+    },
+    {
+      "id": "er_4",
+      "suite_id": "es_2",
+      "status": "passed",
+      "created_at": "2025-09-17T13:03:54+00:00"
+    },
+    {
+      "id": "er_5",
+      "suite_id": "es_3",
+      "status": "queued",
+      "created_at": "2025-09-17T15:18:54+00:00"
+    },
+    {
+      "id": "er_6",
+      "suite_id": "es_3",
+      "status": "queued",
+      "created_at": "2025-09-13T10:56:54+00:00"
+    },
+    {
+      "id": "er_7",
+      "suite_id": "es_4",
+      "status": "failed",
+      "created_at": "2025-09-18T06:19:54+00:00"
+    },
+    {
+      "id": "er_8",
+      "suite_id": "es_4",
+      "status": "running",
+      "created_at": "2025-09-14T07:14:54+00:00"
+    }
+  ],
+  "audit_logs": [
+    {
+      "id": "aud_1",
+      "org_id": "org_2",
+      "actor_user_id": "usr_4",
+      "action": "project.created",
+      "target_id": "w_1",
+      "at": "2025-09-17T15:05:54+00:00"
+    },
+    {
+      "id": "aud_2",
+      "org_id": "org_2",
+      "actor_user_id": "usr_6",
+      "action": "widget.created",
+      "target_id": "w_6",
+      "at": "2025-09-18T04:15:54+00:00"
+    },
+    {
+      "id": "aud_3",
+      "org_id": "org_1",
+      "actor_user_id": "usr_1",
+      "action": "dashboard.created",
+      "target_id": "w_3",
+      "at": "2025-09-15T16:46:54+00:00"
+    },
+    {
+      "id": "aud_4",
+      "org_id": "org_1",
+      "actor_user_id": "usr_2",
+      "action": "alert.updated",
+      "target_id": "w_7",
+      "at": "2025-09-13T19:30:54+00:00"
+    },
+    {
+      "id": "aud_5",
+      "org_id": "org_2",
+      "actor_user_id": "usr_5",
+      "action": "project.archived",
+      "target_id": "prj_1",
+      "at": "2025-09-17T19:45:54+00:00"
+    },
+    {
+      "id": "aud_6",
+      "org_id": "org_2",
+      "actor_user_id": "usr_6",
+      "action": "alert.updated",
+      "target_id": "db_1",
+      "at": "2025-09-18T06:27:54+00:00"
+    },
+    {
+      "id": "aud_7",
+      "org_id": "org_1",
+      "actor_user_id": "usr_3",
+      "action": "alert.updated",
+      "target_id": "al_3",
+      "at": "2025-09-16T23:51:54+00:00"
+    },
+    {
+      "id": "aud_8",
+      "org_id": "org_2",
+      "actor_user_id": "usr_4",
+      "action": "project.created",
+      "target_id": "db_1",
+      "at": "2025-09-15T04:07:54+00:00"
+    },
+    {
+      "id": "aud_9",
+      "org_id": "org_1",
+      "actor_user_id": "usr_3",
+      "action": "widget.updated",
+      "target_id": "prj_2",
+      "at": "2025-09-16T06:56:54+00:00"
+    },
+    {
+      "id": "aud_10",
+      "org_id": "org_2",
+      "actor_user_id": "usr_6",
+      "action": "project.archived",
+      "target_id": "db_4",
+      "at": "2025-09-14T15:43:54+00:00"
+    }
+  ]
+}
