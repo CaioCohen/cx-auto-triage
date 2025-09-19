@@ -3,75 +3,53 @@ import fs from 'fs/promises';
 import path from 'path';
 import url from 'url';
 
-const { OPENAI_API_KEY } = process.env;
-if (!OPENAI_API_KEY) throw new Error('Missing OPENAI_API_KEY');
-
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const KNOWLEDGE_PATH = process.env.KNOWLEDGE_PATH || path.join(__dirname, '../../knowledge/description.txt');
-const FAQS_PATH = process.env.FAQS_PATH || path.join(__dirname, '../../knowledge/faqs.json');
 
-let KN = null;
-let FAQS = null;
-
+let KNOWLEDGE = '';
 async function loadKnowledge() {
-  if (KN == null) {
-    try { KN = await fs.readFile(KNOWLEDGE_PATH, 'utf-8'); }
-    catch { KN = 'Product description missing.'; }
+  if (!KNOWLEDGE) {
+    try { KNOWLEDGE = await fs.readFile(KNOWLEDGE_PATH, 'utf-8'); }
+    catch { KNOWLEDGE = 'Knowledge file missing.'; }
   }
-  return KN;
+  return KNOWLEDGE;
 }
 
-async function loadFaqs() {
-  if (FAQS == null) {
-    try {
-      const raw = await fs.readFile(FAQS_PATH, 'utf-8');
-      FAQS = JSON.parse(raw);
-    } catch {
-      FAQS = [];
-    }
-  }
-  return FAQS;
-}
-
-function asFaqText(faqs, limit = 6) {
-  if (!faqs || !faqs.length) return 'No FAQs available.';
-  const list = faqs.slice(0, limit).map(f => `Q: ${f.q}\nA: ${f.a}`).join('\n\n');
-  return list;
-}
-
-// Pass dbText if you want the agent to use your mock DB as additional context
-export async function answerQuestion({ query, dbText = null }) {
+/**
+ * @param {{ query: string, fileId?: string|null }} params
+ * Returns a short, grounded answer string.
+ */
+export async function answerQuestion({ query, fileId = null }) {
   const knowledge = await loadKnowledge();
-  const faqs = await loadFaqs();
-  const faqText = asFaqText(faqs);
 
-  const messages = [
-    {
-      role: 'system',
-      content:
-        `You are a helpful support assistant for Observe Lite.
-        Use the product description and FAQs as ground truth.
-        Always answer concisely in plain text and include a short "Next steps" section when helpful.`
-            },
-            { role: 'system', content: `Product description:\n${knowledge}` },
-            { role: 'system', content: `FAQs:\n${faqText}` },
-            { role: 'user', content: `Question:\n${query}` }
-        ];
+  const system = [
+    'You are a helpful CX assistant. You have access to the product description and a complete mock database (provided as a file).',
+    'When answering questions, you must always reference facts from the DB file if it is included.',
+    'If the user asks about specific users, organizations, dashboards, projects, or metrics,',
+    'you must extract the answer directly from the DB file without guessing or suggesting external tools.',
+    'Only say "I dont know" if the information is truly missing from the DB.'
+  ].join(' ');
 
-  if (dbText) {
-    messages.push({
-      role: 'user',
-      content: `Optional DB JSON (if relevant to the answer):\n${dbText.slice(0, 100000)}`
-    });
+  const input = [
+    { role: 'system', content: [{ type: 'input_text', text: system }] },
+    { role: 'system', content: [{ type: 'input_text', text: `Product description:\n${knowledge}` }] }
+  ];
+
+  const parts = [{ type: 'input_text', text: query }];
+  if (fileId) {
+    parts.push({ type: 'input_file', file_id: fileId }); // <-- attach the PDF DB here
   }
+  input.push({ role: 'user', content: parts });
 
-  const r = await openai.chat.completions.create({
+  const resp = await openai.responses.create({
     model: 'gpt-4o-mini',
-    messages,
+    input,
     temperature: 0.2
   });
 
-  return r.choices?.[0]?.message?.content?.trim() || 'No answer generated.';
+  // Use output_text; keep a safe fallback
+  const text = (resp.output_text || '').trim();
+  return text || 'I could not find enough information to answer confidently.';
 }

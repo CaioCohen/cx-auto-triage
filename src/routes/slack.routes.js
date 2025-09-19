@@ -15,8 +15,9 @@ router.post('/command', async (req, res) => {
       return res.json({ response_type: 'ephemeral', text: 'Usage: /ask_observe <your question>' });
     }
 
-    // Quick call without DB by default; you can add heuristics to include DB
-    const fakeReq = { body: { query, includeDb: false } };
+    // naive heuristic: if question mentions widget/project/dashboard/metric, include DB
+    const includeDb = /\b(widget|project|dashboard|metric|permission|access)\b/i.test(query);
+    const fakeReq = { body: { query, includeDb } };
     const fakeRes = {
       json: (data) => data
     };
