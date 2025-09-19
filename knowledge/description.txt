@@ -18,6 +18,7 @@ Visibility and access rules
 - Public projects are visible to any user in the same org.
 - Private projects require a permission row for the user with at least viewer.
 - Viewers can see dashboards and widgets. Editors can change dashboard layout and widget settings.
+-Users can see if a project exists, even if the visibility is private, but they need special privileges to see the details
 
 Dashboard and widget behavior
 - A widget will not show up if visible=false or archived=true.

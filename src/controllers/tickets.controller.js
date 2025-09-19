@@ -7,7 +7,7 @@ import { ensureDbFileId } from '../services/db_file.service.js';
 export async function getTickets(req, res) {
   try {
     const limit = Number(req.query.limit ?? 25);
-    const status = String(req.query.status ?? 'open');
+    const status = String(req.query.status ?? 'open'); // Gets the tickets that have the open status
     const tickets = await listTickets({ limit, status });
 
     res.json(tickets.map(t => ({
@@ -22,11 +22,13 @@ export async function getTickets(req, res) {
   }
 }
 
+//Triages one ticket by its ID
 export async function triageOne(req, res) {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) return res.status(400).json({ error: 'invalid ticket id' });
 
+    // check if ?force=1 is passed to re-triage even if already triaged
     const force = String(req.query.force || '').toLowerCase();
     const forceTriage = force === '1' || force === 'true';
 
@@ -37,7 +39,7 @@ export async function triageOne(req, res) {
     } catch (e) {
       return res.status(e?.status || 404).json({ error: e?.message || 'ticket not found' });
     }
-
+    // checks if ticket should be triaged again
     const alreadyTriaged = (ticket.tags || []).includes('ai_triaged');
     if (alreadyTriaged && !forceTriage) {
       return res.status(409).json({ error: 'ticket already triaged, pass ?force=1 to override' });
@@ -51,8 +53,11 @@ export async function triageOne(req, res) {
     if (plan.need_db === 'yes') {
       dbFileId = await ensureDbFileId();
     }
+
+    // step 3: finalize triage
     const triaged = await finalizeTriage({ ticket, fileId: dbFileId });
-    // update in Zendesk (same compact comment as above)
+
+    // update in Zendesk
     const mergedTags = Array.from(new Set([...(ticket.tags || []), 'ai_triaged', `cat_${triaged.category}`, ...triaged.tags]));
     await updateTicket(ticket.id, {
       tags: mergedTags,
@@ -96,13 +101,10 @@ export async function createTicketController(req, res) {
     }),
     priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
     tags: z.array(z.string()).optional(),
-    requester_id: z.number().int().positive().optional(),
     requester: z.object({
       name: z.string(),
       email: z.string().email()
     }).optional(),
-    group_id: z.number().int().positive().optional(),
-    assignee_id: z.number().int().positive().optional()
   }).strict();
 
   try {

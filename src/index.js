@@ -1,4 +1,4 @@
-globalThis.File ??= (await import('node:buffer')).File;
+globalThis.File ??= (await import('node:buffer')).File; // Safe on Node 20+, a no-op. Needed for older Node.
 import app from './app.js';
 
 const PORT = process.env.PORT || '3000';

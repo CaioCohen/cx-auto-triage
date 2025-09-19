@@ -1,0 +1,134 @@
+CX Auto-Triage — short write-up
+
+If you want the full documentation, with diagrams, screenshots, exact flows etc, check CX-auto-triage-documentation.pdf in the project root. 
+
+CX-auto-triage-documentation
+
+What it is
+
+An HTTP API in Node.js that integrates with Zendesk to automatically triage support tickets using OpenAI. It can also answer product questions via a Slack slash command or a plain HTTP endpoint. Public base URL:
+https://auto-triage-service-726253627972.us-central1.run.app
+Source code: https://github.com/CaioCohen/cx-auto-triage
+
+Endpoints
+
+Create a ticket in Zendesk — testing helper
+POST /api/tickets
+
+Triage a specific Zendesk ticket by id
+POST /api/tickets/:id/triage
+Optional: ?force=true to re-triage an already AI-handled ticket
+
+Knowledge Base answer over HTTP
+POST /api/answers/ask
+
+Slack slash command receiver
+POST /slack/command — command name: /ask_observe
+
+Overview and approach
+Architecture in brief
+
+controllers handle validation and orchestration
+
+repositories wrap Zendesk API calls
+
+services run OpenAI calls, attach the DB file, answer KB questions
+
+routes define Express routes
+
+knowledge/description.txt gives the model product rules
+
+data/mock_db.pdf is a tiny, fictional dataset used for grounding
+
+Two-step triage
+
+planTriage reads the ticket subject and body plus the product description, then decides if grounding is needed. It returns need_db: "yes" | "no" and only extracts literal values that are present in the ticket text. Guardrails use Zod to normalize and validate.
+
+finalizeTriage produces the final structured result. If need_db is yes, it attaches mock_db.pdf as an input_file to the OpenAI Responses API so answers are grounded. The output is strictly validated to this schema:
+
+{
+  "category": "billing" | "bug" | "how_to" | "account" | "feature_request" | "other",
+  "priority": "low" | "normal" | "high" | "urgent",
+  "language": "string",
+  "tags": ["... up to 10 ..."],
+  "summary": "10..750 chars",
+  "confidence": 0.0
+}
+
+
+The controller updates Zendesk: merges tags safely, adds ai_triaged and a category tag, updates priority, and posts a private internal note with the triage summary.
+
+Slack knowledge assistant
+
+The /ask_observe command calls the same answer service used by /api/answers/ask. You can hint grounding with db:on or db:off in the message.
+
+How to run
+Easiest — use the published API
+
+Base URL: https://auto-triage-service-726253627972.us-central1.run.app
+
+Examples:
+
+# Health
+curl -s https://auto-triage-service-726253627972.us-central1.run.app/health
+
+# Create a ticket (testing helper)
+curl -s -X POST https://auto-triage-service-726253627972.us-central1.run.app/api/tickets \
+  -H "Content-Type: application/json" \
+  -d '{
+    "requester": {"name":"Jane Customer","email":"jane@example.com"},
+    "subject":"Cannot access account",
+    "comment":{"body":"I get an error when logging in.","public":true},
+    "priority":"high",
+    "tags":["login","account"]
+  }'
+
+# Triage ticket id 123
+curl -s -X POST "https://auto-triage-service-726253627972.us-central1.run.app/api/tickets/123/triage?force=true"
+
+# KB answer without Slack
+curl -s -X POST https://auto-triage-service-726253627972.us-central1.run.app/api/answers/ask \
+  -H "Content-Type: application/json" \
+  -d '{"query":"Is elliot@acme.com active?","includeDb":true}'
+
+Run locally
+
+Requirements: Node 20 or newer.
+
+git clone https://github.com/CaioCohen/cx-auto-triage.git
+cd cx-auto-triage
+npm i
+
+
+Create .env in the project root:
+
+OPENAI_API_KEY=sk-...
+ZENDESK_SUBDOMAIN=your_subdomain
+ZENDESK_EMAIL=you@example.com
+ZENDESK_API_TOKEN=...
+KNOWLEDGE_PATH=./knowledge/description.txt
+MOCK_DB_PATH=./data/mock_db.pdf
+PORT=3000
+
+
+Start:
+
+npm run start
+# API on http://localhost:3000
+
+
+Optional Slack testing locally: run a tunnel such as ngrok, set the Slash Command Request URL to https://YOUR-TUNNEL/slack/command, and reinstall the app in your workspace.
+
+Why this solves the problem
+
+Fewer false positives, less back-and-forth — The model decides if it needs data. Simple usage tickets are answered directly, while data-dependent ones are grounded by the DB file and product rules.
+
+Faster first response and shorter handle time — Agents get a complete triage package instantly: category, priority, tags, and an internal summary.
+
+Consistent, auditable outcomes — Results follow a strict schema and are validated. Tags are merged safely and the ticket is marked ai_triaged with a private note explaining what was applied.
+
+Better customer experience — Simple or misrouted tickets are resolved faster and complex ones reach humans with context already assembled.
+
+Self-service in Slack — /ask_observe answers common “how to” and “is X active” questions directly in chat, deflecting tickets and saving time.
+
+For diagrams, exact flows, and screenshots, see CX-auto-triage-documentation.pdf in the repository root.

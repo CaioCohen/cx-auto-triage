@@ -86,7 +86,9 @@ function sanitizePlan(rawPlan, ticket) {
 /* ----------------- LLM call ----------------- */
 
 export async function planTriage({ ticket }) {
-  const knowledge = await loadKnowledge();
+  const knowledge = await loadKnowledge(); // load knowledge once
+
+  // Build messages for chat completion
   const messages = [
     {
       role: 'system',
@@ -145,32 +147,34 @@ const TriageResultSchema = z.object({
 });
 
 export async function finalizeTriage({ ticket, fileId = null }) {
-  const knowledge = await loadKnowledge();
+  const knowledge = await loadKnowledge(); // load knowledge once
 
+  // JSON schema as string for prompt
   const schemaString = `
-{
-  "category": "billing" | "bug" | "how_to" | "account" | "feature_request" | "other",
-  "priority": "low" | "normal" | "high" | "urgent",
-  "language": string (2-8 characters),
-  "tags": string[] (max 10),
-  "summary": string (10 to 750 characters),
-  "confidence": number from 0 to 1
-}`.trim();
+    {
+      "category": "billing" | "bug" | "how_to" | "account" | "feature_request" | "other",
+      "priority": "low" | "normal" | "high" | "urgent",
+      "language": string (2-8 characters),
+      "tags": string[] (max 10),
+      "summary": string (10 to 750 characters),
+      "confidence": number from 0 to 1
+    }`.trim();
 
+    // system prompt with instructions
   const systemText =
-`You are a senior CX triage assistant. Use the product description and, if provided as an input file, the DB JSON as ground truth.
-Reply ONLY with a valid JSON object that exactly matches this schema:
+    `You are a senior CX triage assistant. Use the product description and, if provided as an input file, the DB JSON as ground truth.
+    Reply ONLY with a valid JSON object that exactly matches this schema:
 
-${schemaString}
+    ${schemaString}
 
-All fields are required. Do not include markdown, comments, or explanations.`;
+    All fields are required. Do not include markdown, comments, or explanations.`;
 
-  const userTicketText = `Ticket:
-Subject: ${ticket.subject || '(no subject)'}
-Body:
-${ticket.description || '(no description)'}`;
+      const userTicketText = `Ticket:
+    Subject: ${ticket.subject || '(no subject)'}
+    Body:
+    ${ticket.description || '(no description)'}`;
 
-  // Build the input array for Responses API - use input_text for all parts
+  // Build the input array for Responses API
   const input = [
     { role: 'system', content: [{ type: 'input_text', text: systemText }] },
     { role: 'system', content: [{ type: 'input_text', text: `Product description:\n${knowledge}` }] }
@@ -183,7 +187,7 @@ ${ticket.description || '(no description)'}`;
   }
   input.push({ role: 'user', content: userParts });
 
-  // Create response - no text.format here, rely on instruction + repair
+  // Create response
   const resp = await openai.responses.create({
     model: 'gpt-4o-mini',
     input,
@@ -199,15 +203,15 @@ ${ticket.description || '(no description)'}`;
       model: 'gpt-4o-mini',
       input: [
         { role: 'system', content: [{ type: 'input_text', text:
-`You returned an invalid triage JSON. Retry and return ONLY a valid JSON object that matches the schema:
+          `You returned an invalid triage JSON. Retry and return ONLY a valid JSON object that matches the schema:
 
-${schemaString}
+          ${schemaString}
 
-All fields are required.` }] },
-        { role: 'user', content: [{ type: 'input_text', text }] }
-      ],
-      temperature: 0.1
-    });
+          All fields are required.` }] },
+                  { role: 'user', content: [{ type: 'input_text', text }] }
+                ],
+                temperature: 0.1
+              });
     const fixed = repair.output_text || '{}';
     return TriageResultSchema.parse(JSON.parse(fixed));
   }

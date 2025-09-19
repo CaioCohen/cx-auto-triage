@@ -3,10 +3,10 @@ import { createTicketController, getTickets, triageOne } from '../controllers/ti
 
 const router = Router();
 
-// GET /api/tickets?status=new&limit=25
+// GET
 router.get('/tickets', getTickets);
 
-// POST /api/triage/run?limit=25
+// POST
 
 router.post('/tickets/:id/triage', triageOne);
 

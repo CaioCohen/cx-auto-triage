@@ -17,13 +17,9 @@ async function loadKnowledge() {
   return KNOWLEDGE;
 }
 
-/**
- * @param {{ query: string, fileId?: string|null }} params
- * Returns a short, grounded answer string.
- */
 export async function answerQuestion({ query, fileId = null }) {
   const knowledge = await loadKnowledge();
-
+ // system prompt with instructions
   const system = [
     'You are a helpful CX assistant. You have access to the product description and a complete mock database (provided as a file).',
     'When answering questions, you must always reference facts from the DB file if it is included.',
@@ -32,6 +28,7 @@ export async function answerQuestion({ query, fileId = null }) {
     'Only say "I dont know" if the information is truly missing from the DB.'
   ].join(' ');
 
+  // Build the input array for Responses API
   const input = [
     { role: 'system', content: [{ type: 'input_text', text: system }] },
     { role: 'system', content: [{ type: 'input_text', text: `Product description:\n${knowledge}` }] }
@@ -39,8 +36,9 @@ export async function answerQuestion({ query, fileId = null }) {
 
   const parts = [{ type: 'input_text', text: query }];
   if (fileId) {
-    parts.push({ type: 'input_file', file_id: fileId }); // <-- attach the PDF DB here
+    parts.push({ type: 'input_file', file_id: fileId });
   }
+  // user message with query and optional file
   input.push({ role: 'user', content: parts });
 
   const resp = await openai.responses.create({
@@ -49,7 +47,6 @@ export async function answerQuestion({ query, fileId = null }) {
     temperature: 0.2
   });
 
-  // Use output_text; keep a safe fallback
   const text = (resp.output_text || '').trim();
   return text || 'I could not find enough information to answer confidently.';
 }

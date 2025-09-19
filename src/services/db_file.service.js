@@ -13,9 +13,9 @@ const ID_CACHE_FILE = path.join(CACHE_DIR, 'db_file_id.txt');
 globalThis.File ??= (await import('node:buffer')).File;
 
 export async function ensureDbFileId() {
+  // Creates cache dir if missing
   await fsp.mkdir(CACHE_DIR, { recursive: true });
 
-  // If you want to always reuse the same uploaded file id across restarts,
   // keep a small cache on disk.
   try {
     const savedId = (await fsp.readFile(ID_CACHE_FILE, 'utf-8')).trim();

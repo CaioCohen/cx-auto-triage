@@ -3,10 +3,6 @@ import { askAnswer } from '../controllers/answers.controller.js';
 
 const router = Router();
 
-// Slack sends application/x-www-form-urlencoded with fields like text, user_id, channel_id.
-// You already have app.use(express.json()), also add urlencoded in app.js:
-// app.use(express.urlencoded({ extended: true }));
-
 router.post('/command', async (req, res) => {
   try {
     // Basic shape: /ask_observe <query text>
@@ -21,7 +17,7 @@ router.post('/command', async (req, res) => {
     const fakeRes = {
       json: (data) => data
     };
-    const result = await askAnswer(fakeReq, fakeRes); // reuse controller
+    const result = await askAnswer(fakeReq, fakeRes);
     // askAnswer would normally write res.json; we can call answer service directly instead:
     // const answer = await answerQuestion({ query });
 
